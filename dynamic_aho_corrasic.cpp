@@ -5,13 +5,13 @@ struct AhoCorasick
 {
     struct Node
     {
-        int children[27], go[27], fail;
+        int children[26], go[26], fail;  // 0-based index for 26 characters
         set<int> output;
 
         Node()
         {
-            memset(children, -1, sizeof(children));
-            memset(go, -1, sizeof(go));
+            memset(children, -1, sizeof(children));  // Initialize all children as -1
+            memset(go, -1, sizeof(go));              // Initialize go transitions as -1
             fail = -1;
         }
     };
@@ -22,12 +22,12 @@ struct AhoCorasick
     AhoCorasick()
     {
         root = 0;
-        nodes.push_back(Node());
+        nodes.push_back(Node());  // Root node
     }
 
     int charToIndex(char c)
     {
-        return c - 'a' + 1;
+        return c - 'a';  // Zero-based index (0 for 'a', 1 for 'b', ...)
     }
 
     // Insert a pattern dynamically
@@ -45,7 +45,7 @@ struct AhoCorasick
             curr = nodes[curr].children[i];
         }
         nodes[curr].output.insert(id);
-        build(); // Rebuild failure links after insertion
+        build();  // Rebuild failure links after insertion
     }
 
     // Build failure links using BFS
@@ -60,7 +60,7 @@ struct AhoCorasick
             int curr = q.front();
             q.pop();
 
-            for (int i = 1; i <= 26; ++i)
+            for (int i = 0; i < 26; ++i)  // Check all 26 characters
             {
                 int child = nodes[curr].children[i];
                 if (child == -1)
@@ -79,8 +79,8 @@ struct AhoCorasick
                 q.push(child);
             }
 
-            // Compute transitions
-            for (int i = 1; i <= 26; ++i)
+            // Compute transitions using the fail links
+            for (int i = 0; i < 26; ++i)
             {
                 if (nodes[curr].children[i] != -1)
                 {
@@ -94,10 +94,10 @@ struct AhoCorasick
         }
     }
 
-    // Search text dynamically
-    unordered_map<int, vector<int>> search(const string &text)
+    // Search text dynamically (only matches active patterns)
+    vector<pair<int, int>> search(const string &text)
     {
-        unordered_map<int, vector<int>> matches;
+        vector<pair<int, int>> matches;  // {pattern id, position}
         int curr = root;
 
         for (int j = 0; j < text.size(); ++j)
@@ -109,51 +109,12 @@ struct AhoCorasick
             while (temp != root)
             {
                 for (int id : nodes[temp].output)
-                    matches[id].push_back(j - id + 1);
+                {
+                    matches.push_back({id, j});
+                }
                 temp = nodes[temp].fail;
             }
         }
         return matches;
-    }
-
-    // Remove a pattern dynamically
-    void remove(const string &s, int id)
-    {
-        int curr = root;
-        for (char c : s)
-        {
-            int i = charToIndex(c);
-            if (nodes[curr].children[i] == -1)
-                return; // Pattern doesn't exist
-            curr = nodes[curr].children[i];
-        }
-
-        nodes[curr].output.erase(id);
-
-        // If no other patterns rely on this node, remove it
-        cleanUp();
-    }
-
-    // Cleanup function to remove unused nodes (only called after deletion)
-    void cleanUp()
-    {
-        for (int i = nodes.size() - 1; i >= 1; --i)
-        {
-            if (nodes[i].output.empty())
-            {
-                bool hasChildren = false;
-                for (int j = 1; j <= 26; ++j)
-                {
-                    if (nodes[i].children[j] != -1)
-                    {
-                        hasChildren = true;
-                        break;
-                    }
-                }
-                if (!hasChildren)
-                    nodes.pop_back();
-            }
-        }
-        build(); // Rebuild failure links after cleanup
     }
 };

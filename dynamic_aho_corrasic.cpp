@@ -54,13 +54,16 @@ struct AhoCorasick
     {
         queue<int> q;
         nodes[root].fail = root;
+
+        // Initialize go transitions for root
         for (int i = 0; i < 26; ++i)
         {
             if (nodes[root].children[i] != -1)
             {
-                nodes[nodes[root].children[i]].fail = root;
-                q.push(nodes[root].children[i]);
-                nodes[root].go[i] = nodes[root].children[i];
+                int child = nodes[root].children[i];
+                nodes[child].fail = root;
+                q.push(child);
+                nodes[root].go[i] = child;
             }
             else
             {
@@ -84,11 +87,13 @@ struct AhoCorasick
 
                     if (nodes[fail].children[i] != -1)
                         fail = nodes[fail].children[i];
+                    else
+                        fail = root;
 
                     nodes[child].fail = fail;
 
+                    // Merge pattern counts and IDs
                     nodes[child].patternCount += nodes[fail].patternCount;
-
                     for (int id : nodes[fail].patternIndices)
                         nodes[child].patternIndices.push_back(id);
 
@@ -104,7 +109,7 @@ struct AhoCorasick
         }
     }
 
-    // ✅ Count only version
+    // ✅ Count total occurrences
     int searchCount(const string &text)
     {
         int curr = root;

@@ -5,14 +5,16 @@ struct AhoCorasick
 {
     struct Node
     {
-        int children[26], go[26], fail;  // 0-based index for 26 characters
-        set<int> output;
+        int children[26], go[26], fail;
+        int patternCount;             // Count patterns ending here
+        vector<int> patternIndices;   // Optional: stores pattern IDs
 
         Node()
         {
-            memset(children, -1, sizeof(children));  // Initialize all children as -1
-            memset(go, -1, sizeof(go));              // Initialize go transitions as -1
+            memset(children, -1, sizeof(children));
+            memset(go, -1, sizeof(go));
             fail = -1;
+            patternCount = 0;
         }
     };
 
@@ -22,15 +24,15 @@ struct AhoCorasick
     AhoCorasick()
     {
         root = 0;
-        nodes.push_back(Node());  // Root node
+        nodes.push_back(Node());
     }
 
     int charToIndex(char c)
     {
-        return c - 'a';  // Zero-based index (0 for 'a', 1 for 'b', ...)
+        return c - 'a';
     }
 
-    // Insert a pattern dynamically
+    // Insert pattern, assign an ID (index)
     void insert(const string &s, int id)
     {
         int curr = root;
@@ -44,15 +46,14 @@ struct AhoCorasick
             }
             curr = nodes[curr].children[i];
         }
-        nodes[curr].output.insert(id);
-        build();  // Rebuild failure links after insertion
+        nodes[curr].patternCount++;
+        nodes[curr].patternIndices.push_back(id); // Track pattern id
     }
 
-    // Build failure links using BFS
     void build()
     {
         queue<int> q;
-        nodes[root].fail = -1;
+        nodes[root].fail = root;
         q.push(root);
 
         while (!q.empty())
@@ -60,44 +61,55 @@ struct AhoCorasick
             int curr = q.front();
             q.pop();
 
-            for (int i = 0; i < 26; ++i)  // Check all 26 characters
+            for (int i = 0; i < 26; ++i)
             {
                 int child = nodes[curr].children[i];
                 if (child == -1)
-                    continue;
-
-                int fail = nodes[curr].fail;
-                while (fail != -1 && nodes[fail].children[i] == -1)
-                    fail = nodes[fail].fail;
-
-                nodes[child].fail = (fail == -1) ? root : nodes[fail].children[i];
-
-                // Merge output from failure link
-                nodes[child].output.insert(nodes[nodes[child].fail].output.begin(),
-                                           nodes[nodes[child].fail].output.end());
-
-                q.push(child);
-            }
-
-            // Compute transitions using the fail links
-            for (int i = 0; i < 26; ++i)
-            {
-                if (nodes[curr].children[i] != -1)
                 {
-                    nodes[curr].go[i] = nodes[curr].children[i];
+                    nodes[curr].go[i] = (curr == root) ? root : nodes[nodes[curr].fail].go[i];
                 }
                 else
                 {
-                    nodes[curr].go[i] = (curr == root) ? root : nodes[nodes[curr].fail].go[i];
+                    int fail = nodes[curr].fail;
+                    while (fail != root && nodes[fail].children[i] == -1)
+                        fail = nodes[fail].fail;
+
+                    if (nodes[fail].children[i] != -1)
+                        fail = nodes[fail].children[i];
+
+                    nodes[child].fail = fail;
+                    nodes[child].patternCount += nodes[fail].patternCount;
+
+                    // Merge pattern indices (for index tracking)
+                    for (int id : nodes[fail].patternIndices)
+                        nodes[child].patternIndices.push_back(id);
+
+                    q.push(child);
+                    nodes[curr].go[i] = child;
                 }
             }
         }
     }
 
-    // Search text dynamically (only matches active patterns)
-    vector<pair<int, int>> search(const string &text)
+    // ✅ Count only version (fast)
+    int searchCount(const string &text)
     {
-        vector<pair<int, int>> matches;  // {pattern id, position}
+        int curr = root;
+        int count = 0;
+
+        for (char c : text)
+        {
+            int i = charToIndex(c);
+            curr = nodes[curr].go[i];
+            count += nodes[curr].patternCount;
+        }
+        return count;
+    }
+
+    // ✅ Version to get matched pattern ids with position
+    vector<pair<int, int>> searchWithIndex(const string &text)
+    {
+        vector<pair<int, int>> matches;
         int curr = root;
 
         for (int j = 0; j < text.size(); ++j)
@@ -108,10 +120,8 @@ struct AhoCorasick
             int temp = curr;
             while (temp != root)
             {
-                for (int id : nodes[temp].output)
-                {
+                for (int id : nodes[temp].patternIndices)
                     matches.push_back({id, j});
-                }
                 temp = nodes[temp].fail;
             }
         }

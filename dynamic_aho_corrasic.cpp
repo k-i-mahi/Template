@@ -6,8 +6,8 @@ struct AhoCorasick
     struct Node
     {
         int children[26], go[26], fail;
-        int patternCount;
-        vector<int> patternIndices;
+        int patternCount;             // Count patterns ending here
+        vector<int> patternIndices;   // Stores pattern IDs
 
         Node()
         {
@@ -29,9 +29,10 @@ struct AhoCorasick
 
     int charToIndex(char c)
     {
-        return c - 'a';
+        return c - 'a';  // assumes lowercase 'a' to 'z'
     }
 
+    // Insert pattern, assign an ID
     void insert(const string &s, int id)
     {
         int curr = root;
@@ -53,6 +54,8 @@ struct AhoCorasick
     {
         queue<int> q;
         nodes[root].fail = root;
+
+        // Initialize go transitions for root
         for (int i = 0; i < 26; ++i)
         {
             if (nodes[root].children[i] != -1)
@@ -90,6 +93,7 @@ struct AhoCorasick
                     nodes[child].fail = fail;
                     nodes[child].patternCount += nodes[fail].patternCount;
 
+                    // Merge pattern counts and IDs
                     for (int id : nodes[fail].patternIndices)
                         nodes[child].patternIndices.push_back(id);
 
@@ -105,9 +109,12 @@ struct AhoCorasick
         }
     }
 
+    // ✅ Count total occurrences
     int searchCount(const string &text)
     {
-        int curr = root, count = 0;
+        int curr = root;
+        int count = 0;
+
         for (char c : text)
         {
             int i = charToIndex(c);
@@ -117,6 +124,7 @@ struct AhoCorasick
         return count;
     }
 
+    // ✅ Get matched pattern ids with position
     vector<pair<int, int>> searchWithIndex(const string &text)
     {
         vector<pair<int, int>> matches;

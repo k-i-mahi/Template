@@ -243,13 +243,14 @@ pair<int, string> longest_common_substring(const string &s1, const string &s2) {
     for (int i = 1; i < sa.n; i++) {
         int pos1 = sa.sa[i - 1], pos2 = sa.sa[i];
 
-        bool in_s1 = (pos1 < n1);
-        bool in_s2 = (pos2 > n1 && pos2 < n1 + 1 + n2);
+        // Correct logic: one suffix in s1, other in s2
+        bool from_s1 = (pos1 < n1);
+        bool from_s2 = (pos2 > n1 && pos2 < n1 + 1 + n2);
 
-        bool in_s1_rev = (pos2 < n1);
-        bool in_s2_rev = (pos1 > n1 && pos1 < n1 + 1 + n2);
+        bool from_s1_alt = (pos2 < n1);
+        bool from_s2_alt = (pos1 > n1 && pos1 < n1 + 1 + n2);
 
-        if ((in_s1 && in_s2) || (in_s1_rev && in_s2_rev)) {
+        if ((from_s1 && from_s2) || (from_s1_alt && from_s2_alt)) {
             if (sa.lcp[i - 1] > max_lcp) {
                 max_lcp = sa.lcp[i - 1];
                 pos = sa.sa[i];

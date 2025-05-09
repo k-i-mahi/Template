@@ -6,8 +6,8 @@ struct AhoCorasick
     struct Node
     {
         int children[26], go[26], fail;
-        int patternCount;             // Count patterns ending here
-        vector<int> patternIndices;   // Stores pattern IDs
+        int patternCount;
+        vector<int> patternIndices;
 
         Node()
         {
@@ -29,10 +29,9 @@ struct AhoCorasick
 
     int charToIndex(char c)
     {
-        return c - 'a';  // assumes lowercase 'a' to 'z'
+        return c - 'a';
     }
 
-    // Insert pattern, assign an ID
     void insert(const string &s, int id)
     {
         int curr = root;
@@ -54,8 +53,6 @@ struct AhoCorasick
     {
         queue<int> q;
         nodes[root].fail = root;
-
-        // Initialize go transitions for root
         for (int i = 0; i < 26; ++i)
         {
             if (nodes[root].children[i] != -1)
@@ -82,7 +79,7 @@ struct AhoCorasick
                 if (child != -1)
                 {
                     int fail = nodes[curr].fail;
-                    while (nodes[fail].children[i] == -1 && fail != root)
+                    while (fail != root && nodes[fail].children[i] == -1)
                         fail = nodes[fail].fail;
 
                     if (nodes[fail].children[i] != -1)
@@ -91,9 +88,8 @@ struct AhoCorasick
                         fail = root;
 
                     nodes[child].fail = fail;
-
-                    // Merge pattern counts and IDs
                     nodes[child].patternCount += nodes[fail].patternCount;
+
                     for (int id : nodes[fail].patternIndices)
                         nodes[child].patternIndices.push_back(id);
 
@@ -109,12 +105,9 @@ struct AhoCorasick
         }
     }
 
-    // ✅ Count total occurrences
     int searchCount(const string &text)
     {
-        int curr = root;
-        int count = 0;
-
+        int curr = root, count = 0;
         for (char c : text)
         {
             int i = charToIndex(c);
@@ -124,7 +117,6 @@ struct AhoCorasick
         return count;
     }
 
-    // ✅ Get matched pattern ids with position
     vector<pair<int, int>> searchWithIndex(const string &text)
     {
         vector<pair<int, int>> matches;

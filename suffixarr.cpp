@@ -194,4 +194,69 @@ int compare_substrings(int l1, int r1, int l2, int r2) {
     // Compare next character after common prefix
     return s[l1 + common] < s[l2 + common] ? -1 : 1;
 }
+string kth_substring(ll k) {
+    for (int i = 0; i < n; i++) {
+        ll substrings_from_i = n - 1 - sa[i];
+        ll new_substrings = substrings_from_i - (i ? lcp[i - 1] : 0);
+        if (k <= new_substrings) {
+            ll len = (i ? lcp[i - 1] : 0) + k;
+            return s.substr(sa[i], len);
+        }
+        k -= new_substrings;
+    }
+    return ""; // k too large
+}
+string longest_palindromic_substring() {
+    int n1 = s.size();
+    string rev_s = string(s.rbegin(), s.rend());
+    SuffixArray sa_combined(s + '#' + rev_s);
+
+    int best_len = 0, best_pos = 0;
+    for (int i = 0; i < n1; i++) {
+        int l1 = i;
+        int l2 = n1 - 1 - i;
+        int len = sa_combined.get_lcp(l1, n1 + 1 + l2);
+
+        // Odd length palindrome
+        if (2 * len - 1 > best_len) {
+            best_len = 2 * len - 1;
+            best_pos = i - len + 1;
+        }
+
+        // Even length palindrome
+        len = sa_combined.get_lcp(l1, n1 + 1 + l2 - 1);
+        if (2 * len > best_len) {
+            best_len = 2 * len;
+            best_pos = i - len + 1;
+        }
+    }
+
+    return s.substr(best_pos, best_len);
+}
+pair<int, string> longest_common_substring(const string &s1, const string &s2) {
+    string combined = s1 + '#' + s2 + '\0';
+    int n1 = s1.size(), n2 = s2.size();
+
+    SuffixArray sa(combined);
+    int max_lcp = 0, pos = 0;
+
+    for (int i = 1; i < sa.n; i++) {
+        int pos1 = sa.sa[i - 1], pos2 = sa.sa[i];
+
+        bool in_s1 = (pos1 < n1);
+        bool in_s2 = (pos2 > n1 && pos2 < n1 + 1 + n2);
+
+        bool in_s1_rev = (pos2 < n1);
+        bool in_s2_rev = (pos1 > n1 && pos1 < n1 + 1 + n2);
+
+        if ((in_s1 && in_s2) || (in_s1_rev && in_s2_rev)) {
+            if (sa.lcp[i - 1] > max_lcp) {
+                max_lcp = sa.lcp[i - 1];
+                pos = sa.sa[i];
+            }
+        }
+    }
+
+    return {max_lcp, combined.substr(pos, max_lcp)};
+}
 };

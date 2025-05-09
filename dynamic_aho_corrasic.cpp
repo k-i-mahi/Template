@@ -7,7 +7,7 @@ struct AhoCorasick
     {
         int children[26], go[26], fail;
         int patternCount;             // Count patterns ending here
-        vector<int> patternIndices;   // Optional: stores pattern IDs
+        vector<int> patternIndices;   // Stores pattern IDs
 
         Node()
         {
@@ -29,10 +29,10 @@ struct AhoCorasick
 
     int charToIndex(char c)
     {
-        return c - 'a';
+        return c - 'a';  // assumes lowercase 'a' to 'z'
     }
 
-    // Insert pattern, assign an ID (index)
+    // Insert pattern, assign an ID
     void insert(const string &s, int id)
     {
         int curr = root;
@@ -47,14 +47,26 @@ struct AhoCorasick
             curr = nodes[curr].children[i];
         }
         nodes[curr].patternCount++;
-        nodes[curr].patternIndices.push_back(id); // Track pattern id
+        nodes[curr].patternIndices.push_back(id);
     }
 
     void build()
     {
         queue<int> q;
         nodes[root].fail = root;
-        q.push(root);
+        for (int i = 0; i < 26; ++i)
+        {
+            if (nodes[root].children[i] != -1)
+            {
+                nodes[nodes[root].children[i]].fail = root;
+                q.push(nodes[root].children[i]);
+                nodes[root].go[i] = nodes[root].children[i];
+            }
+            else
+            {
+                nodes[root].go[i] = root;
+            }
+        }
 
         while (!q.empty())
         {
@@ -64,34 +76,35 @@ struct AhoCorasick
             for (int i = 0; i < 26; ++i)
             {
                 int child = nodes[curr].children[i];
-                if (child == -1)
-                {
-                    nodes[curr].go[i] = (curr == root) ? root : nodes[nodes[curr].fail].go[i];
-                }
-                else
+                if (child != -1)
                 {
                     int fail = nodes[curr].fail;
-                    while (fail != root && nodes[fail].children[i] == -1)
+                    while (nodes[fail].children[i] == -1 && fail != root)
                         fail = nodes[fail].fail;
 
                     if (nodes[fail].children[i] != -1)
                         fail = nodes[fail].children[i];
 
                     nodes[child].fail = fail;
+
                     nodes[child].patternCount += nodes[fail].patternCount;
 
-                    // Merge pattern indices (for index tracking)
                     for (int id : nodes[fail].patternIndices)
                         nodes[child].patternIndices.push_back(id);
 
                     q.push(child);
+
                     nodes[curr].go[i] = child;
+                }
+                else
+                {
+                    nodes[curr].go[i] = nodes[nodes[curr].fail].go[i];
                 }
             }
         }
     }
 
-    // ✅ Count only version (fast)
+    // ✅ Count only version
     int searchCount(const string &text)
     {
         int curr = root;
@@ -106,7 +119,7 @@ struct AhoCorasick
         return count;
     }
 
-    // ✅ Version to get matched pattern ids with position
+    // ✅ Get matched pattern ids with position
     vector<pair<int, int>> searchWithIndex(const string &text)
     {
         vector<pair<int, int>> matches;

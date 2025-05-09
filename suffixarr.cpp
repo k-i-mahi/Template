@@ -178,34 +178,20 @@ struct SuffixArray
         return false;
     }
 
-    int compare_substrings(int l1, int r1, int l2, int r2)
-    {
-        int len1 = r1 - l1 + 1, len2 = r2 - l2 + 1;
-        if (l1 == l2)
-        {
-            if (len1 == len2)
-            {
-                return tie(l1, r1) < tie(l2, r2) ? -1 : 1;
-            }
-            return len1 < len2 ? -1 : 1;
-        }
-        int common = min({len1, len2, get_lcp(l1, l2)});
-        if (common == len1 && common == len2)
-        {
-            return tie(l1, r1) < tie(l2, r2) ? -1 : 1;
-        }
-        if (common == len1)
-        {
-            return -1;
-        }
-        if (common == len2)
-        {
-            return 1;
-        }
-        if (s[l1 + common] == s[l2 + common])
-        {
-            return tie(l1, r1) < tie(l2, r2) ? -1 : 1;
-        }
-        return s[l1 + common] < s[l2 + common] ? -1 : 1;
+int compare_substrings(int l1, int r1, int l2, int r2) {
+    int len1 = r1 - l1 + 1, len2 = r2 - l2 + 1;
+    int common = min({len1, len2, get_lcp(l1, l2)});
+    
+    if (common == len1 && common == len2) {
+        return 0; // substrings are exactly equal
     }
+    if (common == len1) {
+        return -1; // s[l1..r1] is prefix of s[l2..r2]
+    }
+    if (common == len2) {
+        return 1; // s[l2..r2] is prefix of s[l1..r1]
+    }
+    // Compare next character after common prefix
+    return s[l1 + common] < s[l2 + common] ? -1 : 1;
+}
 };

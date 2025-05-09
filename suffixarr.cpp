@@ -178,86 +178,89 @@ struct SuffixArray
         return false;
     }
 
-int compare_substrings(int l1, int r1, int l2, int r2) {
-    int len1 = r1 - l1 + 1, len2 = r2 - l2 + 1;
-    int common = min({len1, len2, get_lcp(l1, l2)});
-    
-    if (common == len1 && common == len2) {
-        return 0; // substrings are exactly equal
-    }
-    if (common == len1) {
-        return -1; // s[l1..r1] is prefix of s[l2..r2]
-    }
-    if (common == len2) {
-        return 1; // s[l2..r2] is prefix of s[l1..r1]
-    }
-    // Compare next character after common prefix
-    return s[l1 + common] < s[l2 + common] ? -1 : 1;
-}
-string kth_substring(ll k) {
-    for (int i = 0; i < n; i++) {
-        ll substrings_from_i = n - 1 - sa[i];
-        ll new_substrings = substrings_from_i - (i ? lcp[i - 1] : 0);
-        if (k <= new_substrings) {
-            ll len = (i ? lcp[i - 1] : 0) + k;
-            return s.substr(sa[i], len);
+    int compare_substrings(int l1, int r1, int l2, int r2)
+    {
+        int len1 = r1 - l1 + 1, len2 = r2 - l2 + 1;
+        int common = min({len1, len2, get_lcp(l1, l2)});
+        
+        if (common == len1 && common == len2) {
+            return 0; // substrings are exactly equal
         }
-        k -= new_substrings;
-    }
-    return ""; // k too large
-}
-string longest_palindromic_substring() {
-    int n1 = s.size();
-    string rev_s = string(s.rbegin(), s.rend());
-    SuffixArray sa_combined(s + '#' + rev_s);
-
-    int best_len = 0, best_pos = 0;
-    for (int i = 0; i < n1; i++) {
-        int l1 = i;
-        int l2 = n1 - 1 - i;
-        int len = sa_combined.get_lcp(l1, n1 + 1 + l2);
-
-        // Odd length palindrome
-        if (2 * len - 1 > best_len) {
-            best_len = 2 * len - 1;
-            best_pos = i - len + 1;
+        if (common == len1) {
+            return -1; // s[l1..r1] is prefix of s[l2..r2]
         }
-
-        // Even length palindrome
-        len = sa_combined.get_lcp(l1, n1 + 1 + l2 - 1);
-        if (2 * len > best_len) {
-            best_len = 2 * len;
-            best_pos = i - len + 1;
+        if (common == len2) {
+            return 1; // s[l2..r2] is prefix of s[l1..r1]
         }
+        return s[l1 + common] < s[l2 + common] ? -1 : 1;
     }
 
-    return s.substr(best_pos, best_len);
-}
-pair<int, string> longest_common_substring(const string &s1, const string &s2) {
-    string combined = s1 + '#' + s2 + '\0';
-    int n1 = s1.size(), n2 = s2.size();
+    string kth_substring(ll k)
+    {
+        for (int i = 0; i < n; i++) {
+            ll substrings_from_i = n - 1 - sa[i];
+            ll new_substrings = substrings_from_i - (i ? lcp[i - 1] : 0);
+            if (k <= new_substrings) {
+                ll len = (i ? lcp[i - 1] : 0) + k;
+                return s.substr(sa[i], len);
+            }
+            k -= new_substrings;
+        }
+        return ""; // k too large
+    }
 
-    SuffixArray sa(combined);
-    int max_lcp = 0, pos = 0;
+    string longest_palindromic_substring()
+    {
+        int n1 = s.size();
+        string rev_s = string(s.rbegin(), s.rend());
+        SuffixArray sa_combined(s + '#' + rev_s);
 
-    for (int i = 1; i < sa.n; i++) {
-        int pos1 = sa.sa[i - 1], pos2 = sa.sa[i];
+        int best_len = 0, best_pos = 0;
+        for (int i = 0; i < n1; i++) {
+            int l1 = i;
+            int l2 = n1 - 1 - i;
+            int len = sa_combined.get_lcp(l1, n1 + 1 + l2);
 
-        // Correct logic: one suffix in s1, other in s2
-        bool from_s1 = (pos1 < n1);
-        bool from_s2 = (pos2 > n1 && pos2 < n1 + 1 + n2);
+            if (2 * len - 1 > best_len) {
+                best_len = 2 * len - 1;
+                best_pos = i - len + 1;
+            }
 
-        bool from_s1_alt = (pos2 < n1);
-        bool from_s2_alt = (pos1 > n1 && pos1 < n1 + 1 + n2);
-
-        if ((from_s1 && from_s2) || (from_s1_alt && from_s2_alt)) {
-            if (sa.lcp[i - 1] > max_lcp) {
-                max_lcp = sa.lcp[i - 1];
-                pos = sa.sa[i];
+            len = sa_combined.get_lcp(l1, n1 + 1 + l2 - 1);
+            if (2 * len > best_len) {
+                best_len = 2 * len;
+                best_pos = i - len + 1;
             }
         }
+
+        return s.substr(best_pos, best_len);
     }
 
-    return {max_lcp, combined.substr(pos, max_lcp)};
-}
+    pair<int, string> longest_common_substring(const string &s1, const string &s2)
+    {
+        string combined = s1 + '#' + s2 + '\0';
+        int n1 = s1.size(), n2 = s2.size();
+
+        SuffixArray sa(combined);
+        int max_lcp = 0, pos = 0;
+
+        for (int i = 1; i < sa.n; i++) {
+            int pos1 = sa.sa[i - 1], pos2 = sa.sa[i];
+
+            bool from_s1 = (pos1 < n1);
+            bool from_s2 = (pos2 > n1 && pos2 < n1 + 1 + n2);
+
+            bool from_s1_alt = (pos2 < n1);
+            bool from_s2_alt = (pos1 > n1 && pos1 < n1 + 1 + n2);
+
+            if ((from_s1 && from_s2) || (from_s1_alt && from_s2_alt)) {
+                if (sa.lcp[i - 1] > max_lcp) {
+                    max_lcp = sa.lcp[i - 1];
+                    pos = sa.sa[i];
+                }
+            }
+        }
+
+        return {max_lcp, combined.substr(pos, max_lcp)};
+    }
 };
